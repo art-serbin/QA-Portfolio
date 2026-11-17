@@ -9,7 +9,7 @@ A collection of independently documented software quality assurance practice pro
 | Project | Focus | Status |
 |---|---|---|
 | [QA-001 · SauceDemo](projects/QA-001-SauceDemo/README.md) | Login, cart, checkout, PDF receipts | Documented |
-| QA-002 · Website audit | Functional, responsive, code review, smoke automation | Planned |
+| [QA-002 · Studio Arts](projects/QA-002-StudioArts/README.md) | Static HTML audit and Playwright smoke suite | Static checks passed; browser tests blocked |
 
 ### QA-001 — SauceDemo
 
@@ -33,7 +33,7 @@ A collection of independently documented software quality assurance practice pro
 
 **Used in QA-001:** manual browser workflows, screenshot inspection, PDF receipt comparison.
 
-**Planned:** API testing, Playwright automation, cross-browser checks and code review. These are not yet claimed as completed portfolio skills.
+**Prepared in QA-002:** Playwright smoke tests and source-code review. Browser execution is blocked in the current environment; automated test passes are **not** claimed. **Planned:** API testing and cross-browser coverage.
 
 ## About
 
