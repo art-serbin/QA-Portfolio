@@ -95,3 +95,14 @@ Retested using `conn = db.connect(':memory:')` followed by `db.init_db(conn)`: `
 ### BUG-004 — Representative connection retest (step 41, confirmed)
 
 Retested with the application's own `db.connect(':memory:')` and `db.init_db(conn)`. SQLite foreign keys were **enabled (1)**. Seeded stock was **14**; adding **15** units and calling `db.create_order` created **order #1**, leaving stock **-1**. **FAIL; BUG-004 confirmed under application-equivalent database initialization.** This rules out the earlier foreign-key-disabled test connection as the cause of overselling. Test remained isolated from `shop.db`.
+
+## Confirmed data-layer defect — BUG-006: Fractional quantity accepted and ordered
+
+**Severity / priority:** High / P1 provisional (scope limited to data-layer call; Telegram UI reachability unverified)  
+**Environment:** Windows 11, Python 3.12.10, SQLite in-memory via application `db.connect(':memory:')`, `db.init_db(conn)`  
+**Steps:** (1) Seed catalog; Aurora Wireless Headphones stock 14. (2) Call `db.add_to_cart(conn, 999999, product_id, 1.5)`. (3) Call `db.create_order(conn, 999999, 'Test User', '1234567890', 'Test Address')`. (4) Query `order_items.qty` and `products.stock`.  
+**Expected:** Reject non-integer quantity for a unit-counted product; no fractional order or stock movement.  
+**Actual:** Order #1 created with `order_items.qty = 1.5`; stock changed from 14 to 12.5.  
+**Evidence:** User-run PowerShell/Python execution, 17 November 2026; reproduced using application connection initializer with FK checks on.  
+**Status:** Confirmed at data-layer / Open. **Not demonstrated through Telegram UI**; direct Python API calls may bypass bot-side constraints.  
+**Note:** Separate from BUG-004 (overselling): fractional quantities are accepted even with sufficient stock.
