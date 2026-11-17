@@ -25,6 +25,7 @@
 - **Negative cart quantity (PASS at data-integrity layer):** `db.add_to_cart(..., qty=-1)` raised SQLite `IntegrityError: CHECK constraint failed: qty > 0`; cart stayed empty and stock remained 14. Graceful application-level error handling has not been verified.
 - **Zero cart quantity (PASS at data-integrity layer):** `db.add_to_cart(..., qty=0)` raised SQLite `IntegrityError: CHECK constraint failed: qty > 0`; cart remained empty and stock stayed 14. Application-level error messaging not tested.
 - **Nonexistent product ID (Needs investigation):** `db.add_to_cart(conn, 999999, 999999999, 1)` returned without an exception, but `get_cart` remained empty and product count remained 6. No phantom cart item observed; whether silent handling is intended requires code review.
+- **Fractional cart quantity (FAIL at data layer, further impact pending):** Using application `db.connect(':memory:')`, `db.add_to_cart(..., qty=1.5)` succeeded and `cart_items.qty` stored `1.5`; initial product stock remained 14. Need to test order creation and determine whether Telegram UI can submit fractional quantities before assigning a separate confirmed bug.
 - **Connectivity:** Telegram API became inaccessible after VPN failure. This is an environmental interruption, not an application bug.
 
 ## Current assessment
