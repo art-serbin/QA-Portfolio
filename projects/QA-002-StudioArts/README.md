@@ -1,42 +1,68 @@
 # QA-002 — Studio Arts Website Audit
 
-**Subject:** Studio Arts v10 public release, supplied ZIP `StudioArts_V10_PUBLIC_RELEASE.zip` (9 files).  
-**Audit started:** 17 November 2026.  
-**Type:** Independent practice audit of a real website. The audit does **not** modify the production site.
+**Subject:** Studio Arts v10 public-release package (`StudioArts_V10_PUBLIC_RELEASE.zip`, 9 files).  
+**Audit date:** 17 November 2026.  
+**Type:** Independent QA practice on a real website project; not a paid client engagement.  
+**Scope:** Local release-package audit; production website was not modified.
 
-## Scope
+## Scope and methods
 
-- Static analysis: HTML structure, links, IDs, images and page metadata.
-- Planned browser smoke checks: navigation, mobile menu, project modal, legal pages, overflow, JavaScript errors.
-- Planned accessibility, performance and cross-browser extensions.
+- Static inspection of four HTML pages, local references, IDs, image alt attributes, and metadata.
+- Playwright browser checks in locally installed Yandex Browser (Chromium-based), desktop 1440×900 and emulated mobile 390×844.
+- Functional navigation, project modal behavior, keyboard focus, legal-page loading, viewport overflow, JavaScript errors, resource requests, and link targets.
 
-## Verified static checks
+## Results
 
-All **four** HTML pages (`index.html`, `privacy.html`, `terms.html`, `purchases.html`) have:
-- a non-empty `<title>`;
-- exactly one `<h1>`;
-- a viewport meta tag;
-- no duplicate HTML IDs;
-- no broken **local** asset/page links found by the static script;
-- no `<img>` elements missing an `alt` attribute.
+**Final local regression run: 34 executions — 30 passed, 4 intentionally skipped, 0 failed (24.4 seconds).**
 
-`robots.txt` and `sitemap.xml` are present. These checks do not establish whether remote URLs or the deployed website work.
+Four skips were desktop executions of mobile-only scenarios. No defects were confirmed in the executed scenarios.
 
-## Finding candidate
+Static inspection previously passed for all four HTML pages (`index.html`, `privacy.html`, `terms.html`, `purchases.html`): nonempty titles, one H1 per page, viewport metadata, no duplicate IDs, no broken local asset/page references in the static inspection, and image alt attributes present. `robots.txt` and `sitemap.xml` were present.
 
-**A11Y-001 — Modal focus containment:** Source code moves focus to the modal close button and implements a Tab wrap, but does not make background content inert. Depending on DOM order and focus sequence, keyboard users may be able to tab into page controls behind the open dialog. **Status: code-review hypothesis; browser reproduction required.**
+Browser checks passed for:
+- Homepage title, single H1, and expected sections.
+- Legal pages and internal HTML document availability.
+- No horizontal overflow at the two configured viewports.
+- No uncaught homepage JavaScript errors during the tested interval.
+- Project modal opening with Enter, closing with Escape, and focus restoration.
+- Modal initial focus and forward/reverse Tab containment.
+- Mobile navigation toggle, section navigation, Escape/focus restoration, and outside-click closing.
+- No observed failed network requests during homepage load.
+- No broken homepage anchor targets.
 
-## Browser execution status
+### Accessibility hypothesis
 
-**BLOCKED — not executed.** Chromium is installed in the audit environment, but local HTTP and `file://` navigation returned `net::ERR_BLOCKED_BY_ADMINISTRATOR`. No browser assertions are marked passed. The Playwright suite is prepared for execution on a local machine or CI runner.
+**A11Y-001 (focus escaping the modal)** was a source-review hypothesis, **not a confirmed defect**. Browser tests for initial focus, Tab, and Shift+Tab passed in both configured modes. The dialog's inner panel has `role="dialog"`, `aria-modal="true"`, and `aria-labelledby`. The outer `#projectModal` container is not itself the dialog element. No full screen-reader audit was performed.
 
-## Reproduce
+## Environment and reproduction
 
-1. Extract the supplied public-release ZIP into a folder, e.g. `site/`.
-2. From the repository root, run `npm install` and `npx playwright install chromium`.
-3. Start the site with `python -m http.server 8765 --directory site`.
-4. In a second terminal, run `npm test`.
+- Windows 11 Pro; Yandex Browser 26.11.0.0, using its installed executable.
+- Playwright Test; local Python HTTP server at `http://127.0.0.1:8765`.
+- The repository's `playwright.config.js` currently contains a machine-specific Yandex Browser executable path. Adjust it for another computer.
+- Browser projects use reduced-motion emulation, but the site's own animation-toggle functionality has **not** been separately verified.
 
-See [test plan](test-plan.md) and [Playwright smoke suite](../../tests/studio-arts.spec.js).
+From the repository root, with the Studio Arts site files available locally:
 
-**Limitations:** This is a source-package audit. It does not prove live production behavior, legal compliance, security posture, or visual correctness.
+```powershell
+npm install
+python -m http.server 8765 --bind 127.0.0.1 --directory "E:\QA_Studio\01_учебные_проекты\QA-002_StudioArts\site"
+```
+
+Keep the server running. In another terminal:
+
+```powershell
+npx playwright test tests/studio-arts.spec.js tests/studio-arts-focus.spec.js --reporter=list --workers=1
+```
+
+The example site directory is local to the original test machine; replace it with your extracted release path.
+
+## Limitations
+
+Results apply to the tested local release, browser version, viewports, and scenarios. Mobile testing used browser emulation, not a physical device. No Firefox/WebKit cross-browser execution, full assistive-technology audit, production HTTPS/header assessment, Core Web Vitals measurement, or security penetration test was performed. The HTTP resource check covered requests triggered by homepage loading, not every possible user interaction. Passing tests do not establish legal compliance or defect-free software.
+
+## Project materials
+
+- [Test plan](test-plan.md)
+- [Test summary](test-summary.md)
+- [Functional smoke suite](../../tests/studio-arts.spec.js)
+- [Modal focus checks](../../tests/studio-arts-focus.spec.js)
