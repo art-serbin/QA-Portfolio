@@ -1,31 +1,32 @@
-# QA-003 — Test Summary (working template)
+# QA-003 — Test Summary (in progress)
 
-**System:** Telegram Shop Bot, pinned upstream commit `d03d7a8c4a85c6ce9ac0bb500823511e92786b4e`  
-**Prepared:** 17 November 2026  
-**Execution status:** NOT STARTED
+**System:** Telegram Shop Bot; source review pinned to upstream commit `d03d7a8c4a85c6ce9ac0bb500823511e92786b4e`  
+**Execution date:** 17 November 2026  
+**Status:** IN PROGRESS; not a final acceptance assessment
 
-| Metric | Current value |
+| Metric | Observed |
 |---|---:|
-| Checklist checks planned | 54 |
-| Detailed initial test cases planned | 12 |
-| Passed | 0 (not executed) |
-| Failed | 0 (not executed) |
-| Blocked | 0 (not assessed) |
-| Confirmed defects | 0 |
-| Source-review risk hypotheses | 8 |
+| Planned checklist checks | 54 |
+| Initial detailed test cases | 12 |
+| Existing upstream pytest tests | 5 passed / 0 failed (0.15 s) |
+| New local overselling regression test | 0 passed / 1 failed as expected (0.13 s) |
+| Confirmed business-logic defects | 1 (BUG-004) |
+| Checkout validation behaviors pending requirements | 3 (BUG-001 to BUG-003, Needs clarification) |
 
-**Important:** Zero failed tests here does not mean the application passed testing. No tests have run.
+## Execution evidence
 
-## Execution log
+- **Windows 11 / Python 3.12.10 / pytest 9.2.0:** Original `python -m pytest -v` ran five upstream tests, all passed.
+- **Isolated SQLite in-memory test:** Seeded 14 Aurora Wireless Headphones, added 15 to cart, `create_order` succeeded and stock became -1. Independent local `tests/test_stock_limit.py` failed with `Failed: DID NOT RAISE ValueError`. The regression test is local to the third-party clone and not yet published in this portfolio.
+- **Telegram Web manual smoke and checkout:** `/start`, catalog (6 products), Aurora item details ($99.99, stock 14), cart, checkout, order placement and order history worked. Order #1 showed $299.97 and status `new`.
+- **Input validation:** Checkout accepted `123456789` as name, `abcdef` as phone and `.` as address, and allowed final order creation. Whether these violate documented requirements remains to be established.
+- **Connectivity:** Telegram API became inaccessible after VPN failure. This is an environmental interruption, not an application bug.
 
-| Date | Build | Environment | Cases executed | Passed | Failed | Blocked | Evidence |
-|---|---|---|---:|---:|---:|---:|---|
-| — | — | — | 0 | 0 | 0 | 0 | Not started |
+## Current assessment
 
-## Final assessment
+**BUG-004 (confirmed, open):** Order creation does not enforce available stock and can produce negative inventory. Business impact is high; provisional P1. Existing passing upstream tests do not cover this negative scenario.
 
-To be completed after actual testing. Record remaining P0/P1 issues, retest results, client coverage, risks and go/no-go recommendation based on evidence.
+Other source-review risks remain unverified. The full 54-item checklist and 12 detailed cases have **not** been completed; do not interpret the five passing upstream tests as an overall pass.
 
-## Limitations
+## Next actions
 
-No Telegram client execution, no database test run, no real-device verification, and no security/performance assessment performed yet.
+Preserve the regression test and output as evidence, review additional negative order scenarios, update checklist/case execution status, and verify validation requirements before final severity classification. No production or third-party service was modified during the isolated stock test.
