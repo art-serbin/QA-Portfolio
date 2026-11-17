@@ -106,3 +106,7 @@ Retested with the application's own `db.connect(':memory:')` and `db.init_db(con
 **Evidence:** User-run PowerShell/Python execution, 17 November 2026; reproduced using application connection initializer with FK checks on.  
 **Status:** Confirmed at data-layer / Open. **Not demonstrated through Telegram UI**; direct Python API calls may bypass bot-side constraints.  
 **Note:** Separate from BUG-004 (overselling): fractional quantities are accepted even with sufficient stock.
+
+### BUG-006 — Schema investigation (step 44)
+
+`PRAGMA table_info` reported `INTEGER NOT NULL` for `cart_items.qty`, `order_items.qty`, and `products.stock`. Ordinary SQLite column affinity does not guarantee rejection of fractional REAL values; the previously observed `1.5` order and `12.5` stock are consistent with this behavior. Storage classes (`typeof(...)`) and any stricter schema constraints still warrant explicit inspection. No source-code fix applied.
