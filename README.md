@@ -1,6 +1,6 @@
 # QA Portfolio — Art Serbin
 
-**Manual QA · Test Design · Functional Testing · Exploratory Testing · Bug Reporting**
+**Manual QA · Test Design · Functional Testing · Exploratory Testing · Browser Automation · Bug Reporting**
 
 A collection of independently documented software quality assurance practice projects. Results are evidence-based, and incomplete or unverified work is clearly labeled. These projects are **not paid client engagements**.
 
@@ -9,7 +9,7 @@ A collection of independently documented software quality assurance practice pro
 | Project | Focus | Status |
 |---|---|---|
 | [QA-001 · SauceDemo](projects/QA-001-SauceDemo/README.md) | Login, cart, checkout, PDF receipts | Documented |
-| [QA-002 · Studio Arts](projects/QA-002-StudioArts/README.md) | Static HTML audit and Playwright smoke suite | Static checks passed; browser tests blocked |
+| [QA-002 · Studio Arts](projects/QA-002-StudioArts/README.md) | Static HTML audit and Playwright browser regression | Executed: 30 passed, 4 intentionally skipped, 0 failed |
 
 ### QA-001 — SauceDemo
 
@@ -22,6 +22,14 @@ A collection of independently documented software quality assurance practice pro
 
 [Case study](projects/QA-001-SauceDemo/README.md) · [Test cases](projects/QA-001-SauceDemo/test-cases.md) · [Findings](projects/QA-001-SauceDemo/findings.md) · [Test summary](projects/QA-001-SauceDemo/test-summary.md)
 
+### QA-002 — Studio Arts
+
+Local audit of the Studio Arts v10 release package, followed by Playwright checks in installed Yandex Browser (desktop 1440×900 and emulated mobile 390×844).
+
+**Final run: 34 executions — 30 passed, 4 intentionally skipped, 0 failed.** Checked navigation, legal pages, project dialogs, keyboard focus, links, resource loading, JavaScript errors and layout overflow at the configured viewports. No defects were confirmed in the tested scenarios. Cross-browser, real-device, full screen-reader, live security and performance checks remain outside the executed scope.
+
+[Case study](projects/QA-002-StudioArts/README.md) · [Test plan](projects/QA-002-StudioArts/test-plan.md) · [Test summary](projects/QA-002-StudioArts/test-summary.md) · [Browser tests](tests/studio-arts.spec.js) · [Focus tests](tests/studio-arts-focus.spec.js)
+
 ## QA principles
 
 - Distinguish observed behavior from confirmed defects.
@@ -31,9 +39,9 @@ A collection of independently documented software quality assurance practice pro
 
 ## Tools and roadmap
 
-**Used in QA-001:** manual browser workflows, screenshot inspection, PDF receipt comparison.
+**QA-001:** Manual browser workflows, screenshot inspection, PDF receipt comparison.
 
-**Prepared in QA-002:** Playwright smoke tests and source-code review. Browser execution is blocked in the current environment; automated test passes are **not** claimed. **Planned:** API testing and cross-browser coverage.
+**QA-002:** Static source audit; Playwright Test with installed Yandex Browser on Windows 11 Pro. The current Playwright configuration includes a machine-specific browser executable path and should be adapted for other machines. **Planned:** API testing, cross-browser coverage, deeper accessibility and performance checks.
 
 ## About
 
