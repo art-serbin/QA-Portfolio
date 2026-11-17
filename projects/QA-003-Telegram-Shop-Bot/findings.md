@@ -122,3 +122,7 @@ Using `db.connect(':memory:')`, adding `qty=1.5` and placing an order produced t
 | `products.stock` | INTEGER | 12.5 | real |
 
 This directly confirms that ordinary SQLite INTEGER affinity did not prevent fractional inventory values in this schema. UI exploitability remains untested. No fix applied.
+
+### Monetary precision observation — steps 47–48 (risk, not confirmed user-facing bug)
+
+Using the app's `db.connect(':memory:')`, six units at $99.99 produced `orders.total = 599.9399999999999` with SQLite `typeof(total) = 'real'`. Formatting to two decimals yields `$599.94`; direct equality to `599.94` is false, equality after rounding is true. Inventory decreased from 14 to 8, order quantity was 6, and cart cleared correctly (PASS). **Classification:** floating-point monetary precision risk / observation only; no demonstrated display or payment defect. Recommend integer cents or Decimal for money handling if maintaining the app.
