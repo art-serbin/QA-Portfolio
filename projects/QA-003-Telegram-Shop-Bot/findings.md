@@ -215,3 +215,16 @@ After repeating the injected stock-update failure for user A, having user B add 
 **Evidence:** Step 91: `Stored phone: ''`, `Phone is empty: True`, `Advanced to address: True`. Step 92: `Order created: 1`, `Saved phone: ''`, `Empty phone persisted: True`, `Orders: 1`.  
 **Scope:** Mocked handler and direct DB API; no live Telegram run. Distinct from BUG-002 (alphabetic phone accepted).  
 **Recommendation:** Require a nonempty normalized phone in `checkout_phone()`; apply an appropriate phone-format check, allow useful international formats, and enforce validation at the order-creation boundary where appropriate.
+
+
+## BUG-015 — Checkout accepts an empty delivery address (steps 93–94)
+
+**Status:** Confirmed in mocked checkout handler and direct data-layer order creation; no live Telegram end-to-end run.  
+**Severity / priority:** Medium / P2 (provisional; delivery address required for fulfillment).  
+**Environment:** Windows 11, Python 3.12.10; pinned upstream commit `d03d7a8c4a85c6ce9ac0bb500823511e92786b4e`.  
+**Steps:** (1) Call `bot.checkout_address()` with mocked `update.message.text = '     '`, existing name and phone, and mocked empty cart/zero total. (2) Observe stored address `''`, transition to `CONFIRM`, and one confirmation reply. (3) In isolated SQLite DB opened by `db.connect(':memory:')`, add a real catalog item to cart and call `db.create_order(conn, user_id, 'Test User', '1234567890', '')`. (4) Query `orders.address`.  
+**Expected:** Whitespace-only delivery address is rejected with a request for a nonempty address; checkout must not advance to confirmation.  
+**Actual:** Handler advances to confirmation with an empty address; database creates order #1 and persists `address = ''`.  
+**Evidence:** Step 93: `Stored address: ''`, `Address is empty: True`, `Advanced to confirmation: True`, `Confirmation sent: True`. Step 94: `Order created: 1`, `Saved address: ''`, `Empty address persisted: True`, `Orders: 1`.  
+**Scope:** Handler test mocked an empty cart and therefore only establishes address-handler behavior; a separate direct DB test confirms persistence of an order with an empty address. No live Telegram checkout was performed. Distinct from BUG-003 (single-dot address).  
+**Recommendation:** Validate nonempty normalized delivery address before showing confirmation and enforce at the order-creation boundary as appropriate.
