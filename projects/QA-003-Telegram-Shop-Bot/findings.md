@@ -189,3 +189,16 @@ After repeating the injected stock-update failure for user A, having user B add 
 **Actual:** Application constructs an over-limit single outgoing message and calls `reply_text()`; no validation or recovery is present in the inspected path.  
 **Scope:** The message-length violation is demonstrated locally and the vulnerable code path is verified. No Telegram API request was made; do not claim a live `BadRequest` was observed. Telegram platform behavior is inferred from its documented text length constraint.  
 **Recommendation:** Apply sensible per-field length limits in the checkout handlers; validate total rendered confirmation length before sending; provide a user-friendly retry prompt rather than letting an oversized message fail.
+
+
+## BUG-013 — Checkout accepts an empty customer name (steps 89–90)
+
+**Status:** Confirmed at checkout-handler and data-layer; no live Telegram end-to-end run.  
+**Severity / priority:** Low / P3.  
+**Environment:** Windows 11, Python 3.12.10; pinned upstream commit `d03d7a8c4a85c6ce9ac0bb500823511e92786b4e`.  
+**Steps to reproduce:** (1) Invoke `bot.checkout_name()` with a mocked Telegram message containing five spaces. (2) Observe that `context.user_data['name']` is `''` and the handler returns `ASK_PHONE`, prompting for a phone number. (3) In a fresh application SQLite in-memory database, add one catalog item to the cart and call `db.create_order(conn, user_id, '', '1234567890', 'Test Address')`. (4) Query the resulting order's `customer_name`.  
+**Expected:** Empty/whitespace-only customer name is rejected, and checkout remains on the name step with a useful validation prompt.  
+**Actual:** Handler advances to phone with an empty name; `db.create_order` successfully creates order #1 and persists `customer_name = ''`.  
+**Evidence:** Step 89 output: `Stored name: ''`, `Name is empty: True`, `Advanced to phone: True`. Step 90: `Order created: 1`, `Saved name: ''`, `Empty name persisted: True`, `Orders: 1`. `NOT NULL` does not disallow empty strings.  
+**Scope:** Mocked handler plus direct database call, not a live Telegram checkout. Distinct from BUG-001 (numeric-only name).  
+**Recommendation:** Validate `name = update.message.text.strip()` is nonempty before setting `context.user_data` and advancing; optionally enforce validation at the service/data boundary.
