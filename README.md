@@ -10,6 +10,7 @@ A collection of independently documented software quality assurance practice pro
 |---|---|---|
 | [QA-001 · SauceDemo](projects/QA-001-SauceDemo/README.md) | Login, cart, checkout, PDF receipts | Documented |
 | [QA-002 · Studio Arts](projects/QA-002-StudioArts/README.md) | Static HTML audit and Playwright browser regression | Executed: 30 passed, 4 intentionally skipped, 0 failed |
+| [QA-003 · Telegram Shop Bot](projects/QA-003-Telegram-Shop-Bot/README.md) | Telegram bot source review and planned functional QA | Planning: 54 checks, 12 test cases; not executed |
 
 ### QA-001 — SauceDemo
 
@@ -29,6 +30,10 @@ Local audit of the Studio Arts v10 release package, followed by Playwright check
 **Final run: 34 executions — 30 passed, 4 intentionally skipped, 0 failed.** Checked navigation, legal pages, project dialogs, keyboard focus, links, resource loading, JavaScript errors and layout overflow at the configured viewports. No defects were confirmed in the tested scenarios. Cross-browser, real-device, full screen-reader, live security and performance checks remain outside the executed scope.
 
 [Case study](projects/QA-002-StudioArts/README.md) · [Test plan](projects/QA-002-StudioArts/test-plan.md) · [Test summary](projects/QA-002-StudioArts/test-summary.md) · [Browser tests](tests/studio-arts.spec.js) · [Focus tests](tests/studio-arts-focus.spec.js)
+
+### QA-003 — Telegram Shop Bot
+
+QA plan for a local, isolated Telegram storefront test bot. Source review identified eight **unconfirmed risk hypotheses**. [Case study](projects/QA-003-Telegram-Shop-Bot/README.md) · [Test plan](projects/QA-003-Telegram-Shop-Bot/test-plan.md) · [Checklist](projects/QA-003-Telegram-Shop-Bot/checklist.md) · [Test cases](projects/QA-003-Telegram-Shop-Bot/test-cases.md) · [Findings](projects/QA-003-Telegram-Shop-Bot/findings.md)
 
 ## QA principles
 
