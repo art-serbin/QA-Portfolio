@@ -130,3 +130,15 @@ Using the app's `db.connect(':memory:')`, six units at $99.99 produced `orders.t
 ### BUG-004 — Two-user sequential last-item purchase (step 50)
 
 Using `db.connect(':memory:')`, set first product stock to **1**. User IDs `111111` and `222222` each added one unit to their own cart. Sequential calls to `db.create_order` both succeeded (order #1 and #2), resulting in **two orders** and **stock = -1**. **FAIL; confirmed overselling in a multi-customer scenario without concurrency.** This strengthens existing BUG-004, not a separate defect. Test uses direct database API; Telegram UI reachability for this exact sequence is not yet verified.
+
+## BUG-007 — Partial order can be committed after stock-update failure
+
+**Status:** Confirmed at data-layer under fault injection; real Telegram runtime impact not established.  
+**Severity / priority:** High / P1 provisional, conditional on reuse/commit of failed connection.  
+**Environment:** SQLite in-memory using application `db.connect(':memory:')`, initialized via `db.init_db(conn)`.  
+**Reproduction (steps 52–53):** Add 2 units to user cart, create a SQLite `BEFORE UPDATE OF stock ON products` trigger raising `ABORT`, commit setup, then call `db.create_order`. Function raises `IntegrityError` during stock update. Immediately after exception, query returns 1 uncommitted order. Explicit `conn.rollback()` correctly restores 0 orders, cart 2, stock 14 (step 52). In a fresh run, instead call `conn.commit()` after catching exception: **orders=1, order_items=1, cart=2, stock=14** (step 53).
+
+**Expected:** Order creation should be atomic: failed checkout must not leave partially created order records available for later commit.  
+**Actual:** Function does not roll back its pending inserts when stock update fails; subsequent caller commit persists incomplete order and item while cart and stock are unchanged.  
+**Scope:** Artificial database trigger plus caller commit; not yet shown that Telegram bot's production connection lifecycle commits after such an error. Do not claim user-facing exploitability without that verification.  
+**Recommendation:** Enclose order creation in an explicit transaction boundary with rollback on exceptions and stock availability checks; consider SQLite savepoints if callers may already have transactions.
