@@ -162,3 +162,17 @@ In application-style shared in-memory connection, user A (111111) had two units 
 ### BUG-007 — Persistence after reinitialization (step 57)
 
 After repeating the injected stock-update failure for user A, having user B add an item (committing the shared connection), closing and reopening the temporary on-disk SQLite database, and calling `db.init_db(conn)`, the results remained: **orders=1, order_items=1, user A cart quantity=2**. Thus reinitialization does not repair the inconsistent partial order. This strengthens the persistence evidence for BUG-007; absence of automatic recovery in `init_db` is **not** separately classified as a defect. Testing of this fault-injection scenario is complete.
+
+
+## BUG-008 — Order total changes after customer sees confirmation (steps 65–68)
+
+**Status:** Confirmed by data-layer reproduction and pinned-source review; Telegram UI end-to-end reproduction not yet performed.  
+**Severity / priority:** High / P1 provisional (especially price increase).  
+**Environment:** Windows 11, Python 3.12.10, SQLite in-memory via application `db.connect(':memory:')` and `db.init_db(conn)`; pinned upstream commit `d03d7a8c4a85c6ce9ac0bb500823511e92786b4e`.  
+**Steps:** (1) Add one product to cart. (2) Read `db.cart_total(db.get_cart(...))`, simulating the total shown on confirmation. (3) Change `products.price` in SQLite and commit before the user clicks Place order. (4) Invoke `db.create_order(...)`. (5) Compare `orders.total` with the previously shown total.  
+**Expected:** Checkout should either honor the previously confirmed amount or show the changed amount and require explicit reconfirmation.  
+**Actual — price increase (step 67):** Displayed $99.99; order persisted at $199.99 (+$100), without reconfirmation in the tested flow.  
+**Actual — price decrease (step 68):** Displayed $199.99; order persisted at $99.99 (-$100), without reconfirmation in the tested flow.  
+**Source evidence:** `bot.py` `checkout_address()` builds the confirmation text using `db.cart_total(cart)`; `checkout_confirm()` calls `db.create_order()` directly without comparing current total with the amount previously displayed. `db.create_order()` reads current product prices when creating the order.  
+**Scope:** The discrepancy and missing price-consistency guard are confirmed in code and direct database tests; no actual payment was processed and a live Telegram UI reproduction of an intervening catalog price change has not yet been performed.  
+**Recommendation:** Snapshot confirmed order items and total or validate the total on Place order; if changed, display updated total and require fresh confirmation.
