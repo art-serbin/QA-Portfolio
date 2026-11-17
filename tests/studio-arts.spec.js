@@ -57,3 +57,154 @@ test('mobile navigation details toggles', async ({ page, isMobile }) => {
   await menu.locator('nav a').first().click();
   await expect(menu).not.toHaveAttribute('open', '');
 });
+
+test('mobile navigation opens project section and closes', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'yandex-mobile',
+    'Mobile navigation is tested only in mobile mode');
+
+  await page.goto('/index.html');
+
+  const menu = page.locator('#mobileNav');
+  const toggle = menu.locator('summary');
+  const projectsLink = menu.locator('a[href="#projects"]');
+
+  await toggle.click();
+  await expect(menu).toHaveAttribute('open', '');
+
+  await projectsLink.click();
+
+  await expect(page).toHaveURL(/#projects$/);
+  await expect(menu).not.toHaveAttribute('open');
+
+  await expect(page.locator('#projects')).toBeInViewport({
+    ratio: 0.1
+  });
+
+  await toggle.click();
+  await expect(menu).toHaveAttribute('open', '');
+});
+
+test('mobile menu closes by Escape and restores focus', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'yandex-mobile',
+    'Mobile-only test');
+
+  await page.goto('/index.html');
+
+  const menu = page.locator('#mobileNav');
+  const toggle = menu.locator('summary');
+
+  await toggle.click();
+  await expect(menu).toHaveAttribute('open', '');
+
+  await page.keyboard.press('Escape');
+
+  await expect(menu).not.toHaveAttribute('open');
+  await expect(toggle).toBeFocused();
+});
+
+test('mobile menu closes when clicking outside', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'yandex-mobile',
+    'Mobile-only test');
+
+  await page.goto('/index.html');
+
+  const menu = page.locator('#mobileNav');
+  const toggle = menu.locator('summary');
+
+  await toggle.click();
+  await expect(menu).toHaveAttribute('open', '');
+
+  await page.locator('#heroTitle').click();
+
+  await expect(menu).not.toHaveAttribute('open');
+
+  await toggle.click();
+  await expect(menu).toHaveAttribute('open', '');
+});
+
+test('homepage loads without failed local resources', async ({ page }) => {
+  const failures = [];
+
+  page.on('response', response => {
+    if (response.status() >= 400) {
+      failures.push({
+        status: response.status(),
+        url: response.url()
+      });
+    }
+  });
+
+  page.on('requestfailed', request => {
+    failures.push({
+      error: request.failure()?.errorText,
+      url: request.url()
+    });
+  });
+
+  await page.goto('/index.html', {
+    waitUntil: 'networkidle'
+  });
+
+  console.log('RESOURCE FAILURES:', failures);
+
+  expect(failures).toEqual([]);
+});
+
+test('all homepage anchor links have valid targets', async ({ page }) => {
+  await page.goto('/index.html');
+
+  const brokenLinks = await page.locator('a[href^="#"]').evaluateAll(links => {
+    return links
+      .filter(link => {
+        const href = link.getAttribute('href');
+        if (!href || href === '#') return false;
+
+        const id = decodeURIComponent(href.slice(1));
+        return !document.getElementById(id);
+      })
+      .map(link => ({
+        text: link.textContent.trim(),
+        href: link.getAttribute('href')
+      }));
+  });
+
+  console.log('BROKEN ANCHOR LINKS:', brokenLinks);
+
+  expect(brokenLinks).toEqual([]);
+});
+
+test('internal HTML links open successfully', async ({ page }) => {
+  await page.goto('/index.html');
+
+  const links = await page.locator('a[href]').evaluateAll(elements =>
+    [...new Set(elements
+      .map(a => a.getAttribute('href'))
+      .filter(href =>
+        href &&
+        !href.startsWith('#') &&
+        !href.startsWith('mailto:') &&
+        !href.startsWith('tel:') &&
+        !/^(https?:)?\/\//i.test(href) &&
+        /\.html(?:[?#]|$)/i.test(href)
+      ))]
+  );
+
+  const failures = [];
+
+  for (const href of links) {
+    const url = new URL(href, page.url()).href;
+    const response = await page.request.get(url);
+
+    if (!response.ok()) {
+      failures.push({
+        href,
+        status: response.status()
+      });
+    }
+  }
+
+  console.log('HTML LINKS CHECKED:', links);
+  console.log('FAILED HTML LINKS:', failures);
+
+  expect(failures).toEqual([]);
+});
