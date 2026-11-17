@@ -142,3 +142,7 @@ Using `db.connect(':memory:')`, set first product stock to **1**. User IDs `1111
 **Actual:** Function does not roll back its pending inserts when stock update fails; subsequent caller commit persists incomplete order and item while cart and stock are unchanged.  
 **Scope:** Artificial database trigger plus caller commit; not yet shown that Telegram bot's production connection lifecycle commits after such an error. Do not claim user-facing exploitability without that verification.  
 **Recommendation:** Enclose order creation in an explicit transaction boundary with rollback on exceptions and stock availability checks; consider SQLite savepoints if callers may already have transactions.
+
+### BUG-007 — Connection close after failure (step 54)
+
+With a temporary on-disk SQLite database and injected stock-update trigger failure, `db.create_order` raised `IntegrityError`. The connection was then **closed without commit or rollback** and reopened via `db.connect(path)`. Observed **orders=0, order_items=0, cart quantity=2**. Closing the connection rolls back uncommitted partial changes; practical severity of BUG-007 depends on whether production code ever commits a failed connection. Contrast with step 53, where an explicit later commit preserved an inconsistent order.
