@@ -75,3 +75,7 @@ On 17 November 2026, using a locally operated test bot, checkout accepted custom
 ### BUG-005 — Additional reproduction: mixed valid and orphaned cart items
 
 With one real product and one nonexistent product ID in an isolated user's cart: raw `cart_items` count was **2**, visible `get_cart` count **1**; `create_order` created order #1 with **1** order item and cleared **both** cart records (raw cart count 0). This confirms that orphaned rows are silently excluded from the order and removed during checkout. It does **not** establish that normal Telegram UI can create the orphaned row, nor that a buyer paid for an omitted item.
+
+### BUG-005 — Additional reproduction: deleting a product with an existing cart reference
+
+In isolated in-memory SQLite, a real product was added to cart (visible count 1), then deleted directly with `DELETE FROM products WHERE id = ?`. Deletion succeeded; raw `cart_items` retained **1** record but `get_cart` returned **0** visible items. This confirms orphaned cart rows can also result from direct catalog deletion with foreign key enforcement disabled. **Scope limitation:** This was a direct SQL operation; whether the application offers product deletion or a supported admin workflow is not yet established. No separate bug ID assigned.
