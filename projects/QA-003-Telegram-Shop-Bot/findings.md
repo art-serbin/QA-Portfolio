@@ -126,3 +126,7 @@ This directly confirms that ordinary SQLite INTEGER affinity did not prevent fra
 ### Monetary precision observation — steps 47–48 (risk, not confirmed user-facing bug)
 
 Using the app's `db.connect(':memory:')`, six units at $99.99 produced `orders.total = 599.9399999999999` with SQLite `typeof(total) = 'real'`. Formatting to two decimals yields `$599.94`; direct equality to `599.94` is false, equality after rounding is true. Inventory decreased from 14 to 8, order quantity was 6, and cart cleared correctly (PASS). **Classification:** floating-point monetary precision risk / observation only; no demonstrated display or payment defect. Recommend integer cents or Decimal for money handling if maintaining the app.
+
+### BUG-004 — Two-user sequential last-item purchase (step 50)
+
+Using `db.connect(':memory:')`, set first product stock to **1**. User IDs `111111` and `222222` each added one unit to their own cart. Sequential calls to `db.create_order` both succeeded (order #1 and #2), resulting in **two orders** and **stock = -1**. **FAIL; confirmed overselling in a multi-customer scenario without concurrency.** This strengthens existing BUG-004, not a separate defect. Test uses direct database API; Telegram UI reachability for this exact sequence is not yet verified.
