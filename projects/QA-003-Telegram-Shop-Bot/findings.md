@@ -176,3 +176,16 @@ After repeating the injected stock-update failure for user A, having user B add 
 **Source evidence:** `bot.py` `checkout_address()` builds the confirmation text using `db.cart_total(cart)`; `checkout_confirm()` calls `db.create_order()` directly without comparing current total with the amount previously displayed. `db.create_order()` reads current product prices when creating the order.  
 **Scope:** The discrepancy and missing price-consistency guard are confirmed in code and direct database tests; no actual payment was processed and a live Telegram UI reproduction of an intervening catalog price change has not yet been performed.  
 **Recommendation:** Snapshot confirmed order items and total or validate the total on Place order; if changed, display updated total and require fresh confirmation.
+
+
+## BUG-012 — Checkout confirmation exceeds Telegram text limit for a permitted-length customer name (steps 83–88)
+
+**Status:** Confirmed by source inspection and local message construction; live Telegram API failure not directly observed.  
+**Severity / priority:** Medium / P2 (provisional).  
+**Environment:** Windows 11, Python 3.12.10, application SQLite in-memory DB; pinned upstream commit `d03d7a8c4a85c6ce9ac0bb500823511e92786b4e`.  
+**Source:** `bot.py` `checkout_name()` line 210 stores `update.message.text.strip()` without a length check; `checkout_address()` lines 227–236 concatenates the full name, cart, phone and address and calls `update.message.reply_text(text, reply_markup=buttons)` without a length check or handling of over-limit text. `db.py` accepts long names in `create_order()`.  
+**Reproduction:** In step 83, `db.create_order()` successfully stored a 10,000-character name, with the cart cleared. Step 87 locally reconstructed the confirmation message using a 10,000-character name: **10,130 characters**, exceeding the 4,096-character Telegram text limit by **6,034**. Step 88 used a **4,096-character name** (within the ordinary Telegram incoming text limit) and the same application-style confirmation format: **4,226 characters**, exceeding the outgoing limit by **130**. `Confirmation exceeds limit: True`.  
+**Expected:** Checkout validates/limits customer field lengths or handles oversized confirmation text gracefully while preserving an actionable confirmation.  
+**Actual:** Application constructs an over-limit single outgoing message and calls `reply_text()`; no validation or recovery is present in the inspected path.  
+**Scope:** The message-length violation is demonstrated locally and the vulnerable code path is verified. No Telegram API request was made; do not claim a live `BadRequest` was observed. Telegram platform behavior is inferred from its documented text length constraint.  
+**Recommendation:** Apply sensible per-field length limits in the checkout handlers; validate total rendered confirmation length before sending; provide a user-friendly retry prompt rather than letting an oversized message fail.
