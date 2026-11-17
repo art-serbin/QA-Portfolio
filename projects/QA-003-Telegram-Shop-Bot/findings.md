@@ -79,3 +79,7 @@ With one real product and one nonexistent product ID in an isolated user's cart:
 ### BUG-005 — Additional reproduction: deleting a product with an existing cart reference
 
 In isolated in-memory SQLite, a real product was added to cart (visible count 1), then deleted directly with `DELETE FROM products WHERE id = ?`. Deletion succeeded; raw `cart_items` retained **1** record but `get_cart` returned **0** visible items. This confirms orphaned cart rows can also result from direct catalog deletion with foreign key enforcement disabled. **Scope limitation:** This was a direct SQL operation; whether the application offers product deletion or a supported admin workflow is not yet established. No separate bug ID assigned.
+
+### BUG-005 — Foreign key configuration evidence (step 38)
+
+SQLite `PRAGMA foreign_key_list(cart_items)` shows a declared `product_id → products.id` foreign key with `NO ACTION`; `PRAGMA foreign_key_list(order_items)` shows `order_id → orders.id` with `NO ACTION`. However, `PRAGMA foreign_keys` returned **0** on the initialized in-memory connection. Thus the relationships are declared but not enforced on that connection, explaining the orphaned cart rows. This evidence does not establish the foreign-key setting for every application connection; verify the connection initialization path separately. Enabling foreign-key enforcement alone does not address BUG-004 overselling.
