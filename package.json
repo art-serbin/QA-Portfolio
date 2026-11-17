@@ -1,0 +1,11 @@
+{
+  "name": "art-serbin-qa-portfolio",
+  "private": true,
+  "scripts": {
+    "test": "playwright test",
+    "test:studio": "playwright test tests/studio-arts.spec.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.0"
+  }
+}
