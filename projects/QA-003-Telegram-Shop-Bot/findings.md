@@ -146,3 +146,7 @@ Using `db.connect(':memory:')`, set first product stock to **1**. User IDs `1111
 ### BUG-007 — Connection close after failure (step 54)
 
 With a temporary on-disk SQLite database and injected stock-update trigger failure, `db.create_order` raised `IntegrityError`. The connection was then **closed without commit or rollback** and reopened via `db.connect(path)`. Observed **orders=0, order_items=0, cart quantity=2**. Closing the connection rolls back uncommitted partial changes; practical severity of BUG-007 depends on whether production code ever commits a failed connection. Contrast with step 53, where an explicit later commit preserved an inconsistent order.
+
+### BUG-007 — Source review of production connection lifecycle
+
+Pinned upstream `bot.py`: `get_conn()` caches **one shared SQLite connection** in `context.application.bot_data['db']` (lines 56–62). `checkout_confirm()` catches only `ValueError` (lines 240–253), not `sqlite3.IntegrityError`. Pinned `db.py` `add_to_cart()` performs `conn.commit()` (lines 97–103). Consequently, a subsequent successful cart operation **could commit** partial changes left by a failed order on the shared connection. This is source-supported risk; end-to-end sequence to be tested, not yet reported as observed.
