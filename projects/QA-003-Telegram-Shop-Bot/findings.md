@@ -71,3 +71,7 @@ On 17 November 2026, using a locally operated test bot, checkout accepted custom
 **Source observation:** `add_to_cart` (db.py 97–103) inserts without checking product existence; `get_cart` (db.py 106–112) uses an inner join with products, hiding orphaned rows.  
 **Status:** Confirmed at data-layer / Open. **Not verified** as exploitable through normal Telegram UI.  
 **Evidence:** User-run isolated Python/SQLite command output on 17 November 2026.
+
+### BUG-005 — Additional reproduction: mixed valid and orphaned cart items
+
+With one real product and one nonexistent product ID in an isolated user's cart: raw `cart_items` count was **2**, visible `get_cart` count **1**; `create_order` created order #1 with **1** order item and cleared **both** cart records (raw cart count 0). This confirms that orphaned rows are silently excluded from the order and removed during checkout. It does **not** establish that normal Telegram UI can create the orphaned row, nor that a buyer paid for an omitted item.
