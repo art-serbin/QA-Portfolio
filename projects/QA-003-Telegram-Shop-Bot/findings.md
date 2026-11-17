@@ -91,3 +91,7 @@ Further source inspection showed that **`db.connect(db_path)` explicitly execute
 ### BUG-005 — RETEST RESULT / CLOSED (Not reproduced under application connection)
 
 Retested using `conn = db.connect(':memory:')` followed by `db.init_db(conn)`: `PRAGMA foreign_keys` returned **1**; attempting `db.add_to_cart(conn, 999999, 999999999, 1)` raised **`FOREIGN KEY constraint failed`**; raw `cart_items` count was **0**. **Final classification: CLOSED — Not Reproduced in normal application configuration; initial reports were false positives caused by bypassing `db.connect()` in tests.** Retain prior observations as a QA process learning, not an open product defect. BUG-004 remains confirmed and independent of FK enforcement.
+
+### BUG-004 — Representative connection retest (step 41, confirmed)
+
+Retested with the application's own `db.connect(':memory:')` and `db.init_db(conn)`. SQLite foreign keys were **enabled (1)**. Seeded stock was **14**; adding **15** units and calling `db.create_order` created **order #1**, leaving stock **-1**. **FAIL; BUG-004 confirmed under application-equivalent database initialization.** This rules out the earlier foreign-key-disabled test connection as the cause of overselling. Test remained isolated from `shop.db`.
