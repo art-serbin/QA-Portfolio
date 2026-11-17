@@ -19,6 +19,8 @@
 - **Isolated SQLite in-memory test:** Seeded 14 Aurora Wireless Headphones, added 15 to cart, `create_order` succeeded and stock became -1. Independent local `tests/test_stock_limit.py` failed with `Failed: DID NOT RAISE ValueError`. The regression test is local to the third-party clone and not yet published in this portfolio.
 - **Telegram Web manual smoke and checkout:** `/start`, catalog (6 products), Aurora item details ($99.99, stock 14), cart, checkout, order placement and order history worked. Order #1 showed $299.97 and status `new`.
 - **Input validation:** Checkout accepted `123456789` as name, `abcdef` as phone and `.` as address, and allowed final order creation. Whether these violate documented requirements remains to be established.
+- **Sequential duplicate-order check (PASS):** In a separate in-memory SQLite database, first `create_order` created order #1; immediate second call raised `ValueError: cart is empty`; one order persisted, stock fell from 14 to 13. This does not establish concurrent-request safety.
+- **Zero-stock overselling check (FAIL):** In-memory database with stock set to 0; adding one item and placing order succeeded, leaving stock -1. This is a second reproduction of BUG-004, not a separate bug.
 - **Connectivity:** Telegram API became inaccessible after VPN failure. This is an environmental interruption, not an application bug.
 
 ## Current assessment
