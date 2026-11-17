@@ -202,3 +202,16 @@ After repeating the injected stock-update failure for user A, having user B add 
 **Evidence:** Step 89 output: `Stored name: ''`, `Name is empty: True`, `Advanced to phone: True`. Step 90: `Order created: 1`, `Saved name: ''`, `Empty name persisted: True`, `Orders: 1`. `NOT NULL` does not disallow empty strings.  
 **Scope:** Mocked handler plus direct database call, not a live Telegram checkout. Distinct from BUG-001 (numeric-only name).  
 **Recommendation:** Validate `name = update.message.text.strip()` is nonempty before setting `context.user_data` and advancing; optionally enforce validation at the service/data boundary.
+
+
+## BUG-014 — Checkout accepts an empty phone number (steps 91–92)
+
+**Status:** Confirmed in mocked checkout handler and direct data-layer order creation; not reproduced end-to-end through Telegram API.  
+**Severity / priority:** Medium / P2 (provisional; contact number is requested for delivery updates).  
+**Environment:** Windows 11, Python 3.12.10; pinned upstream commit `d03d7a8c4a85c6ce9ac0bb500823511e92786b4e`.  
+**Steps:** (1) Call `bot.checkout_phone()` with mocked `update.message.text = '     '` and existing `context.user_data['name'] = 'Test User'`. (2) Observe stored phone `''`, transition to `ASK_ADDRESS` and reply `Delivery address?`. (3) In an isolated SQLite DB initialized with `db.connect(':memory:')`, add one item and call `db.create_order(conn, user_id, 'Test User', '', 'Test Address')`. (4) Query `orders.phone`.  
+**Expected:** Empty or whitespace-only phone is rejected, and the bot requests a valid nonempty contact number without advancing.  
+**Actual:** Handler accepts whitespace as empty string and advances; database successfully creates order #1 with `phone = ''`.  
+**Evidence:** Step 91: `Stored phone: ''`, `Phone is empty: True`, `Advanced to address: True`. Step 92: `Order created: 1`, `Saved phone: ''`, `Empty phone persisted: True`, `Orders: 1`.  
+**Scope:** Mocked handler and direct DB API; no live Telegram run. Distinct from BUG-002 (alphabetic phone accepted).  
+**Recommendation:** Require a nonempty normalized phone in `checkout_phone()`; apply an appropriate phone-format check, allow useful international formats, and enforce validation at the order-creation boundary where appropriate.
