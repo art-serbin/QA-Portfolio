@@ -110,3 +110,15 @@ Retested with the application's own `db.connect(':memory:')` and `db.init_db(con
 ### BUG-006 — Schema investigation (step 44)
 
 `PRAGMA table_info` reported `INTEGER NOT NULL` for `cart_items.qty`, `order_items.qty`, and `products.stock`. Ordinary SQLite column affinity does not guarantee rejection of fractional REAL values; the previously observed `1.5` order and `12.5` stock are consistent with this behavior. Storage classes (`typeof(...)`) and any stricter schema constraints still warrant explicit inspection. No source-code fix applied.
+
+### BUG-006 — SQLite storage class verification (step 45)
+
+Using `db.connect(':memory:')`, adding `qty=1.5` and placing an order produced these verified `typeof()` values:
+
+| Column | Declared affinity | Stored value | SQLite typeof |
+|---|---|---:|---|
+| `cart_items.qty` | INTEGER | 1.5 | real |
+| `order_items.qty` | INTEGER | 1.5 | real |
+| `products.stock` | INTEGER | 12.5 | real |
+
+This directly confirms that ordinary SQLite INTEGER affinity did not prevent fractional inventory values in this schema. UI exploitability remains untested. No fix applied.
