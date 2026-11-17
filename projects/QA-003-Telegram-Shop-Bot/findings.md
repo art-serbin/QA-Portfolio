@@ -150,3 +150,7 @@ With a temporary on-disk SQLite database and injected stock-update trigger failu
 ### BUG-007 — Source review of production connection lifecycle
 
 Pinned upstream `bot.py`: `get_conn()` caches **one shared SQLite connection** in `context.application.bot_data['db']` (lines 56–62). `checkout_confirm()` catches only `ValueError` (lines 240–253), not `sqlite3.IntegrityError`. Pinned `db.py` `add_to_cart()` performs `conn.commit()` (lines 97–103). Consequently, a subsequent successful cart operation **could commit** partial changes left by a failed order on the shared connection. This is source-supported risk; end-to-end sequence to be tested, not yet reported as observed.
+
+### BUG-007 — Cross-user follow-on commit (step 55)
+
+In application-style shared in-memory connection, user A (111111) had two units in cart and checkout failed with `IntegrityError` due to injected stock-update trigger. `SELECT COUNT(*) FROM orders` immediately afterward returned **1** (uncommitted partial order). User B (222222) then successfully invoked `db.add_to_cart`, whose implementation commits the shared connection. This demonstrates the follow-on-commit path, but the script closed an **in-memory** database without reopening, so persistence after reconnect is not yet separately demonstrated. Follow up using temporary on-disk DB and reconnect.
