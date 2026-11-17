@@ -60,3 +60,14 @@ On 17 November 2026, using a locally operated test bot, checkout accepted custom
 - Telegram Web: `/start`, catalog, item detail, add to cart, checkout, place order, and order history exercised successfully; order #1 total $299.97 for three $99.99 headphones, status `new`.
 - Telegram API connectivity was interrupted when VPN failed; network error is not a confirmed application defect.
 
+
+## Confirmed data-layer defect — BUG-005: Nonexistent product creates hidden cart record
+
+**Severity / priority:** Medium / P2 (provisional)  
+**Environment:** Windows 11, Python 3.12.10, isolated SQLite in-memory database  
+**Steps:** Initialize database; call `db.add_to_cart(conn, 999999, 999999999, 1)`; inspect raw `cart_items`, `db.get_cart(conn, 999999)`, and `PRAGMA foreign_keys`.  
+**Expected:** A nonexistent product ID is rejected and no cart record is persisted.  
+**Actual:** Raw `cart_items` contains `{'user_id': 999999, 'product_id': 999999999, 'qty': 1}`, but `get_cart` returns zero visible records; `PRAGMA foreign_keys` is `0`.  
+**Source observation:** `add_to_cart` (db.py 97–103) inserts without checking product existence; `get_cart` (db.py 106–112) uses an inner join with products, hiding orphaned rows.  
+**Status:** Confirmed at data-layer / Open. **Not verified** as exploitable through normal Telegram UI.  
+**Evidence:** User-run isolated Python/SQLite command output on 17 November 2026.
