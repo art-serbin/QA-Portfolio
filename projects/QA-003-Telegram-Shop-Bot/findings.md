@@ -44,7 +44,7 @@
 **Steps:** (1) Initialize in-memory SQLite using `db.init_db(conn)`. (2) Add quantity `stock + 1` (15) to a test user's cart via `db.add_to_cart`. (3) Call `db.create_order`. (4) Query `products.stock`.  
 **Expected:** Insufficient-stock order is rejected and stock remains 14.  
 **Actual:** `Order created: 1`; `Stock after: -1`.  
-**Reproducibility:** Reproduced in one direct execution and an independent pytest regression test.  
+**Reproducibility:** Reproduced in two distinct direct SQLite scenarios and an independent pytest regression test. Scenario A: stock 14, cart quantity 15, order created, stock -1. Scenario B: stock 0, cart quantity 1, order created, stock -1.  
 **Automated evidence:** Local `tests/test_stock_limit.py::test_order_cannot_exceed_available_stock` fails as expected: `Failed: DID NOT RAISE ValueError` (0.13 s). The test expects `ValueError` and unchanged inventory. Test currently exists in local third-party clone; not yet committed to this portfolio.  
 **Root-cause observation:** `db.py` `create_order` subtracts stock without checking availability (around lines 132–149).  
 **Status:** Confirmed / Open.  
