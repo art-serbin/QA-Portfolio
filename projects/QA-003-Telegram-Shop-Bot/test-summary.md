@@ -22,6 +22,7 @@
 - **Sequential duplicate-order check (PASS):** In a separate in-memory SQLite database, first `create_order` created order #1; immediate second call raised `ValueError: cart is empty`; one order persisted, stock fell from 14 to 13. This does not establish concurrent-request safety.
 - **Zero-stock overselling check (FAIL):** In-memory database with stock set to 0; adding one item and placing order succeeded, leaving stock -1. This is a second reproduction of BUG-004, not a separate bug.
 - **Repeat purchase after completed order (PASS):** In-memory database, same user added and purchased one unit twice in sequence; two distinct orders (#1, #2) created and stock fell from 14 to 12. This is a permitted new purchase, not a duplicate retry.
+- **Negative cart quantity (PASS at data-integrity layer):** `db.add_to_cart(..., qty=-1)` raised SQLite `IntegrityError: CHECK constraint failed: qty > 0`; cart stayed empty and stock remained 14. Graceful application-level error handling has not been verified.
 - **Connectivity:** Telegram API became inaccessible after VPN failure. This is an environmental interruption, not an application bug.
 
 ## Current assessment
