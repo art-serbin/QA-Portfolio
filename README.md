@@ -10,7 +10,7 @@ A collection of independently documented software quality assurance practice pro
 |---|---|---|
 | [QA-001 · SauceDemo](projects/QA-001-SauceDemo/README.md) | Login, cart, checkout, PDF receipts | Documented |
 | [QA-002 · Studio Arts](projects/QA-002-StudioArts/README.md) | Static HTML audit and Playwright browser regression | Executed: 30 passed, 4 intentionally skipped, 0 failed |
-| [QA-003 · Telegram Shop Bot](projects/QA-003-Telegram-Shop-Bot/README.md) | Telegram bot source review and planned functional QA | Planning: 54 checks, 12 test cases; not executed |
+| [QA-003 · Telegram Shop Bot](projects/QA-003-Telegram-Shop-Bot/README.md) | Telegram checkout, SQLite integrity, negative tests and failure injection | Completed: 9 confirmed findings; remediation pending |
 
 ### QA-001 — SauceDemo
 
@@ -33,7 +33,9 @@ Local audit of the Studio Arts v10 release package, followed by Playwright check
 
 ### QA-003 — Telegram Shop Bot
 
-QA plan for a local, isolated Telegram storefront test bot. Source review identified eight **unconfirmed risk hypotheses**. [Case study](projects/QA-003-Telegram-Shop-Bot/README.md) · [Test plan](projects/QA-003-Telegram-Shop-Bot/test-plan.md) · [Checklist](projects/QA-003-Telegram-Shop-Bot/checklist.md) · [Test cases](projects/QA-003-Telegram-Shop-Bot/test-cases.md) · [Findings](projects/QA-003-Telegram-Shop-Bot/findings.md)
+Independent functional and data-integrity QA of a Python/SQLite Telegram storefront. Five upstream pytest tests passed. The manual workflow reached 108 numbered steps (not 108 independent test cases); testing combined a live Telegram smoke test, isolated SQLite tests, mocked checkout handlers, source review and fault injection. **Nine confirmed findings** include negative stock, partially committed orders after an injected failure, price changes between confirmation and placement, and checkout validation failures. Several additional observations remain candidates or requirements-dependent; no live production deployment or payment testing was performed.
+
+[Case study](projects/QA-003-Telegram-Shop-Bot/README.md) · [Test plan](projects/QA-003-Telegram-Shop-Bot/test-plan.md) · [Checklist](projects/QA-003-Telegram-Shop-Bot/checklist.md) · [Test cases](projects/QA-003-Telegram-Shop-Bot/test-cases.md) · [Findings](projects/QA-003-Telegram-Shop-Bot/findings.md) · [Final summary](projects/QA-003-Telegram-Shop-Bot/test-summary.md)
 
 ## QA principles
 
