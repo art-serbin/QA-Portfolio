@@ -228,3 +228,16 @@ After repeating the injected stock-update failure for user A, having user B add 
 **Evidence:** Step 93: `Stored address: ''`, `Address is empty: True`, `Advanced to confirmation: True`, `Confirmation sent: True`. Step 94: `Order created: 1`, `Saved address: ''`, `Empty address persisted: True`, `Orders: 1`.  
 **Scope:** Handler test mocked an empty cart and therefore only establishes address-handler behavior; a separate direct DB test confirms persistence of an order with an empty address. No live Telegram checkout was performed. Distinct from BUG-003 (single-dot address).  
 **Recommendation:** Validate nonempty normalized delivery address before showing confirmation and enforce at the order-creation boundary as appropriate.
+
+
+## BUG-018 — Unhandled SQLite OperationalError during checkout confirmation (steps 103–104)
+
+**Status:** Confirmed handler error-handling gap under injected database failure; no live Telegram API failure or real database lock reproduced.  
+**Severity / priority:** Medium / P2 provisional.  
+**Environment:** Windows 11, Python 3.12.10, mocked Telegram callback; application SQLite in-memory DB in step 104; pinned upstream commit `d03d7a8c4a85c6ce9ac0bb500823511e92786b4e`.  
+**Source:** `bot.py` `checkout_confirm()` (around lines 240–258) catches `ValueError` from `db.create_order()` but does not handle `sqlite3.OperationalError` or notify the user on database failure.  
+**Reproduction:** Step 103 mocked `db.create_order` to raise `sqlite3.OperationalError('database is locked')`. Handler raised an unhandled `OperationalError`; callback query was acknowledged, but no confirmation or error message was sent (`User received confirmation: False`). Personal data remained in `context.user_data`. Step 104 used a fresh application SQLite DB with two cart units and a patched `create_order` failing **before any DB write** on the first attempt, then calling the real function on the second. First attempt: `OperationalError`, orders=0, cart quantity=2. Second attempt: successful order #1, cart quantity=0, final stock=12 (from 14).  
+**Expected:** Unexpected database failures are logged and handled gracefully; customer receives a clear retry/failure message, while order/cart state remains consistent.  
+**Actual:** Unhandled exception exits checkout confirmation without any user-facing error message. The isolated pre-write fault scenario recovered on a manual second invocation, but the bot did not guide that recovery.  
+**Scope:** Error injected by test; real SQLite locking and actual Telegram UI behavior not observed. No data corruption observed in step 104; this does not negate BUG-007's distinct partial-write failure path.  
+**Recommendation:** Add explicit transaction rollback on DB errors, catch/log operational failures at the handler boundary, and send a clear retry instruction without falsely claiming order creation.
