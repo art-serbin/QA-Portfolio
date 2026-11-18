@@ -1,46 +1,51 @@
-# QA-003 — Telegram Shop Bot QA Audit
+# QA-003 — Telegram Shop Bot: Checkout and Data Integrity QA
 
-**Status:** Planned; source-code review completed, runtime testing not started.  
+**Status:** Testing cycle complete; defects documented, not fixed.  
 **Project type:** Independent QA practice, not a paid client engagement.  
-**System under test:** [takeyowei/telegram-shop-bot](https://github.com/takeyowei/telegram-shop-bot), pinned upstream commit [d03d7a8c4a85c6ce9ac0bb500823511e92786b4e](https://github.com/takeyowei/telegram-shop-bot/commit/d03d7a8c4a85c6ce9ac0bb500823511e92786b4e) (23 October 2026).
+**System under test:** [takeyowei/telegram-shop-bot](https://github.com/takeyowei/telegram-shop-bot) at pinned [commit d03d7a8](https://github.com/takeyowei/telegram-shop-bot/commit/d03d7a8c4a85c6ce9ac0bb500823511e92786b4e).  
+**Environment:** Windows 11, Python 3.12.10, SQLite, pytest, Telegram Web, mocked Python handlers.
 
 ## Objective
 
-Evaluate a Telegram storefront's functional behavior, data integrity, negative scenarios, privacy boundaries and usability. Keep source-review hypotheses separate from reproduced defects.
+Assess the reliability of a Telegram storefront's product catalog, cart, checkout, stock accounting, order history, input validation and error recovery. Focus on business-impacting defects and distinguish actual Telegram behavior from isolated database and mocked-handler reproductions.
 
-## Source inspection
+## Results at a glance
 
-Inspected upstream `README.md`, `bot.py`, `db.py`, `tests/test_shop.py`, `.env.example`, and `requirements.txt`.
+| Metric | Result |
+|---|---|
+| Upstream pytest tests | 5 passed / 0 failed |
+| Local stock-limit regression | 1 expected failure (overselling reproduced) |
+| Numbered QA workflow steps | 108 (not 108 independent test cases) |
+| Confirmed defects | 9 (with evidence scope noted in each report) |
+| Additional tracked issues | Requirements-dependent, candidate or closed; see findings |
+| Production readiness | Not recommended without remediation and regression testing |
 
-The application uses Python, python-telegram-bot and SQLite. It provides six seeded demo products, a persistent per-user cart, a name/phone/address checkout flow, order creation, stock decrement, and order history. The source contains five pytest data-layer tests; they have **not** been executed as part of QA-003 yet.
+## Three representative findings
 
-## Planned deliverables
+1. **[BUG-007 — Partial order after failed stock update](findings.md):** A simulated stock-update failure leaves an uncommitted order. A second user's ordinary cart operation commits that partial order through the shared SQLite connection. Verified again after reopening an on-disk database. **High/P1 provisional; injected failure, not a live Telegram incident.**
+2. **[BUG-004 — Overselling and negative inventory](findings.md):** Order creation allows quantity greater than available stock (14 available, 15 ordered, stock becomes -1). Reproduced using the real data layer. **High/P1 provisional.**
+3. **[BUG-008 — Changed price after customer confirmation](findings.md):** Displayed checkout total of $99.99 can become a recorded order total of $199.99 after a catalog price update, without reconfirmation in the inspected flow. **High/P1 provisional; database/source-level verification.**
+
+## Test approach
+
+- **Manual Telegram Web smoke:** /start, catalog, cart, checkout, order history.
+- **SQLite data-layer checks:** stock, cart isolation, quantity constraints, order totals and persistence.
+- **Mocked Telegram handlers:** empty checkout fields, state transitions, personal-data reuse and error responses.
+- **Fault injection:** forced database failures to examine transaction consistency and recovery.
+- **Source inspection:** pinned `bot.py` and `db.py` to verify whether reproduced SQL behaviors are reachable in the application.
+
+## Deliverables
 
 - [Test plan](test-plan.md)
 - [Checklist](checklist.md)
 - [Detailed test cases](test-cases.md)
-- [Source-review risks and finding register](findings.md)
-- [Execution report template](test-summary.md)
+- [Findings and reproduction evidence](findings.md)
+- [Final test summary and defect disposition](test-summary.md)
 
-## Execution status
+## Key recommendations
 
-No live Telegram interaction, database test run or defect reproduction has been performed for QA-003. All test cases are **Not Run** until execution evidence is recorded.
+Prioritize stock validation and atomic rollback-safe order transactions, then preserve or reconfirm checkout price/quantity before order creation. Add customer-input validation and graceful database error handling. Decide on historical product-name retention and checkout personal-data lifecycle based on requirements.
 
-## Safe testing
+## Boundaries and ethics
 
-Use an independently created BotFather test bot and local SQLite database; never reuse a production token or database. Keep `.env` and `*.db` out of version control. Use fictitious customer details and demo stock only. Do not send bulk traffic, probe third-party bot instances, or process real payments. Obtain consent before any test involving external systems.
-
-## Reproduction approach
-
-1. Clone the upstream source at the pinned commit into a separate local folder (do not copy it into this QA portfolio).
-2. Create a Python virtual environment and install the upstream `requirements.txt`.
-3. Create a dedicated bot using official `@BotFather`; store its token in local `.env` only.
-4. Set `DATABASE_PATH` to a local disposable database path **before starting the Python process**.
-5. Run the bot locally and execute the checklist, recording actual and expected results.
-6. Reset the disposable database between destructive scenarios. Use a second authorized test account only for isolation scenarios.
-
-The source repository's README claims MIT licensing, but no standalone LICENSE file was visible at the inspected revision. Do not assume redistribution rights for the upstream source based solely on that claim.
-
-## Scope limitations
-
-Source-review findings are hypotheses, not confirmed defects. No API, Postman, SQL query training, performance, security penetration, or live-production assessment is claimed here. Those can follow this manual bot QA phase.
+The test environment used demo data and a dedicated test bot; no production systems, real customer information or payments were involved. Most negative tests were **not** performed against the Telegram API. Some scenarios intentionally injected faults, and the historical-product-name issue is a schema limitation rather than a demonstrated /orders UI failure. The original 54-check plan and 12 detailed test cases were not fully executed as a formal suite. No fixes to upstream source are claimed.
