@@ -241,3 +241,13 @@ After repeating the injected stock-update failure for user A, having user B add 
 **Actual:** Unhandled exception exits checkout confirmation without any user-facing error message. The isolated pre-write fault scenario recovered on a manual second invocation, but the bot did not guide that recovery.  
 **Scope:** Error injected by test; real SQLite locking and actual Telegram UI behavior not observed. No data corruption observed in step 104; this does not negate BUG-007's distinct partial-write failure path.  
 **Recommendation:** Add explicit transaction rollback on DB errors, catch/log operational failures at the handler boundary, and send a clear retry instruction without falsely claiming order creation.
+
+
+## BUG-019 — Product name not retained in historical order items after catalog deletion (steps 106–108)
+
+**Status:** Confirmed historical-data limitation in schema and direct SQLite reproduction; **not confirmed as a defect in the existing Telegram /orders UI**.  
+**Priority:** Low / P3 provisional; product detail history requirements not specified.  
+**Pinned source:** `db.py` defines `order_items(order_id, product_id, qty, price)` without a product name snapshot or foreign key to products; `db.create_order()` stores only those fields. `bot.py` `show_orders()` displays order ID, total, status, and date only, **not product names or individual items**.  
+**Reproduction:** Step 106: create order for Aurora Wireless Headphones, delete its row from `products`; deletion succeeds, `orders` and `order_items` remain. Step 107: `order_items` row retains `product_id=1, qty=1, price=99.99`, but no name, and LEFT JOIN `products.name` returns NULL. Step 108: INNER JOIN `order_items` to `products` returns one item before deletion and zero after, while the stored `order_items` count stays one.  
+**Impact:** Order line item remains numerically intact but cannot independently identify the original product by name once the catalog row is removed; downstream detailed order reports relying on INNER JOIN would omit it. The existing bot's order summary does not use that join, so **do not claim that /orders loses a visible row**.  
+**Recommendation:** Snapshot product name (and optionally SKU) in `order_items` when purchasing, or enforce soft deletion of products and preserve historical references. Confirm business requirements before escalating severity.
